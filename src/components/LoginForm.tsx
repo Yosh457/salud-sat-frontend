@@ -62,10 +62,10 @@ export function LoginForm() {
             // Guardamos el token en localStorage (Temporal, luego veremos cookies)
             localStorage.setItem("sat_token", result.token);
 
-            // Redirigimos al Dashboard (Crearemos esta página pronto)
-            // Por ahora redirigimos al home o mostramos alerta
-            alert("¡Login Exitoso! Token guardado.");
-            // router.push("/dashboard"); 
+            // Redirigimos al Dashboard
+            // Comentamos la alerta para no interrumpir el flujo
+            // alert("¡Login Exitoso! Token guardado.");
+            router.push("/dashboard"); 
 
         } catch (err: any) {
             setError(err.message); // Mostramos el error en pantalla
