@@ -3,34 +3,88 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+// 1. Definimos la estructura de los datos que vienen de la API (Stats)
+interface StatItem {
+    estado?: string;
+    prioridad?: string;
+    total: number;
+}
+
+interface DashboardStats {
+    resumen_estados: StatItem[];
+    alertas_prioridad: StatItem[];
+    top_tecnicos: any[];
+}
 
 export default function DashboardPage() {
     const router = useRouter();
-    const [user, setUser] = useState<{ rut: string; rol: string; nombre: string; } | null>(null);
+    const [user, setUser] = useState<{ rut: string; rol: string; nombre: string } | null>(null);
+
+    // Estado para guardar las estadísticas
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [loadingStats, setLoadingStats] = useState(true);
 
     useEffect(() => {
-        // 1. Verificar si hay token
+        // A. Verificación de Auth (Igual que antes)
         const token = localStorage.getItem("sat_token");
-
         if (!token) {
-            router.push("/"); // Si no hay token, volver al login
+            router.push("/");
             return;
         }
 
-        // 2. Decodificar el token (de forma básica para obtener datos visuales)
-        // Nota: La seguridad real la pone el Backend al validar el token en cada petición.
         try {
             const payload = JSON.parse(atob(token.split(".")[1]));
-            setUser({ rut: payload.rut, rol: payload.rol, nombre: payload.nombre });
+            setUser({
+                rut: payload.rut,
+                rol: payload.rol,
+                nombre: payload.nombre
+            });
+
+            // B. Llamada a la API de Estadísticas
+            // Solo si el usuario es Admin o Técnico (Funcionario no tiene acceso a stats globales)
+            // Aunque tu endpoint de stats devuelve data, el funcionario no debería ver "todo".
+            // Por simplicidad, cargaremos los datos, pero visualmente filtraremos si es necesario.
+            fetchStats(token);
+
         } catch (e) {
             localStorage.removeItem("sat_token");
             router.push("/");
         }
     }, [router]);
 
+    // Función asíncrona para pedir los números
+    const fetchStats = async (token: string) => {
+        try {
+            const response = await fetch("http://localhost:3000/api/stats/dashboard", {
+                headers: {
+                    "Authorization": `Bearer ${token}` // 👈 Importante: Enviar el token
+                }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                setStats(result.data);
+            }
+        } catch (error) {
+            console.error("Error cargando stats:", error);
+        } finally {
+            setLoadingStats(false);
+        }
+    };
+
     const handleLogout = () => {
         localStorage.removeItem("sat_token");
         router.push("/");
+    };
+
+    // Helper para buscar un número específico en el array de respuesta
+    // Ej: Buscar en resumen_estados donde estado sea 'pendiente'
+    const getCount = (arr: StatItem[] | undefined, key: 'estado' | 'prioridad', value: string) => {
+        if (!arr) return 0;
+        const found = arr.find(item => item[key] === value);
+        return found ? found.total : 0;
     };
 
     if (!user) {
@@ -39,7 +93,7 @@ export default function DashboardPage() {
 
     return (
         <div className="flex min-h-screen bg-gray-100">
-            {/* SIDEBAR (Barra Lateral) - Pronto la moveremos a un componente separado */}
+            {/* SIDEBAR */}
             <aside className="w-64 bg-white shadow-md hidden md:block">
                 <div className="p-6">
                     <h2 className="text-2xl font-bold text-blue-700">SAT Salud</h2>
@@ -67,28 +121,72 @@ export default function DashboardPage() {
             <main className="flex-1 p-8">
                 <header className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800">Bienvenido, {user.nombre}</h1>
-                        <p className="text-gray-600">RUT: {user.rut} | Rol: <span className="uppercase font-bold">{user.rol}</span></p>
+                        <h1 className="text-3xl font-bold text-gray-800">
+                            Bienvenido, {user.nombre}
+                        </h1>
+                        <p className="text-gray-600">
+                            RUT: {user.rut} | Rol: <span className="uppercase font-bold">{user.rol}</span>
+                        </p>
                     </div>
                     <Button variant="destructive" onClick={handleLogout}>
                         Cerrar Sesión
                     </Button>
                 </header>
 
-                {/* Área de trabajo (Aquí irán las tablas y gráficos) */}
+                {/* KPIs / Tarjetas de Estadísticas */}
                 <div className="grid gap-4 md:grid-cols-3">
-                    <div className="p-6 bg-white rounded-lg shadow">
-                        <h3 className="text-gray-500">Tickets Pendientes</h3>
-                        <p className="text-3xl font-bold text-orange-500">3</p>
-                    </div>
-                    <div className="p-6 bg-white rounded-lg shadow">
-                        <h3 className="text-gray-500">En Proceso</h3>
-                        <p className="text-3xl font-bold text-blue-500">2</p>
-                    </div>
-                    <div className="p-6 bg-white rounded-lg shadow">
-                        <h3 className="text-gray-500">Resueltos (Mes)</h3>
-                        <p className="text-3xl font-bold text-green-500">15</p>
-                    </div>
+
+                    {/* Tarjeta 1: Pendientes */}
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">
+                                Tickets Pendientes
+                            </CardTitle>
+                            <span className="text-2xl">⏳</span>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-orange-600">
+                                {loadingStats ? "..." : getCount(stats?.resumen_estados, 'estado', 'pendiente')}
+                            </div>
+                            <p className="text-xs text-muted-foreground">Requieren atención inicial</p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Tarjeta 2: En Proceso */}
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">
+                                En Proceso
+                            </CardTitle>
+                            <span className="text-2xl">🔧</span>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-blue-600">
+                                {loadingStats ? "..." : getCount(stats?.resumen_estados, 'estado', 'en_proceso')}
+                            </div>
+                            <p className="text-xs text-muted-foreground">Están siendo atendidos</p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Tarjeta 3: Críticos (Alta Prioridad) */}
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">
+                                Prioridad Alta/Crítica
+                            </CardTitle>
+                            <span className="text-2xl">🚨</span>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-red-600">
+                                {loadingStats ? "..." : (
+                                    getCount(stats?.alertas_prioridad, 'prioridad', 'alta') +
+                                    getCount(stats?.alertas_prioridad, 'prioridad', 'critica')
+                                )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">Urgencias activas</p>
+                        </CardContent>
+                    </Card>
+
                 </div>
             </main>
         </div>
