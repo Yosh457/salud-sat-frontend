@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
     const router = useRouter();
-    const [user, setUser] = useState<{ rut: string; rol: string } | null>(null);
+    const [user, setUser] = useState<{ rut: string; rol: string; nombre: string; } | null>(null);
 
     useEffect(() => {
         // 1. Verificar si hay token
@@ -21,7 +21,7 @@ export default function DashboardPage() {
         // Nota: La seguridad real la pone el Backend al validar el token en cada petición.
         try {
             const payload = JSON.parse(atob(token.split(".")[1]));
-            setUser({ rut: payload.rut, rol: payload.rol });
+            setUser({ rut: payload.rut, rol: payload.rol, nombre: payload.nombre });
         } catch (e) {
             localStorage.removeItem("sat_token");
             router.push("/");
@@ -67,7 +67,7 @@ export default function DashboardPage() {
             <main className="flex-1 p-8">
                 <header className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800">Bienvenido, Funcionario</h1>
+                        <h1 className="text-3xl font-bold text-gray-800">Bienvenido, {user.nombre}</h1>
                         <p className="text-gray-600">RUT: {user.rut} | Rol: <span className="uppercase font-bold">{user.rol}</span></p>
                     </div>
                     <Button variant="destructive" onClick={handleLogout}>
