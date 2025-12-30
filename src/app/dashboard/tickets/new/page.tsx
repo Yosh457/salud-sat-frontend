@@ -32,6 +32,8 @@ type TicketFormValues = z.infer<typeof ticketSchema>;
 export default function NewTicketPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    // 🆕 Estado para el archivo adjunto
+    const [file, setFile] = useState<File | null>(null);
 
     const {
         register,
@@ -50,6 +52,7 @@ export default function NewTicketPage() {
         const token = localStorage.getItem("sat_token");
 
         try {
+            // Paso 1: Crear el ticket
             const response = await fetch("http://localhost:3000/api/tickets", {
                 method: "POST",
                 headers: {
@@ -59,14 +62,35 @@ export default function NewTicketPage() {
                 body: JSON.stringify(data),
             });
 
+            const result = await response.json();
+
             if (response.ok) {
-                alert("Ticket creado exitosamente"); // Opcional: reemplazar por un Toast más elegante después
+                const newTicketId = result.ticketId; // Obtenemos el ID del ticket recién creado
+
+                // PASO 2: Subir Evidencia (Solo si el usuario seleccionó un archivo)
+                if (file && newTicketId) {
+                    const formData = new FormData();
+                    formData.append("evidencia", file); // Debe coincidir con upload.single('evidencia') en backend
+
+                    // Llamada al endpoint de subida
+                    await fetch(`http://localhost:3000/api/tickets/${newTicketId}/evidencia`, {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${token}`,
+                            // NOTA: No agregar "Content-Type" manual, fetch lo hace automático para FormData
+                        },
+                        body: formData,
+                    });
+                }
+
+                alert("Ticket creado exitosamente");
                 router.push("/dashboard/tickets"); // Volver al listado
             } else {
-                alert("Error al crear el ticket");
+                alert(result.message || "Error al crear el ticket");
             }
         } catch (error) {
             console.error(error);
+            alert("Error de conexión con el servidor");
         } finally {
             setLoading(false);
         }
@@ -153,6 +177,27 @@ export default function NewTicketPage() {
                             {errors.descripcion && <p className="text-red-500 text-xs">{errors.descripcion.message}</p>}
                         </div>
 
+                        {/* 🆕 Evidencia (Opcional) */}
+                        <div className="space-y-2 p-4 bg-slate-50 border rounded-md border-dashed border-gray-300">
+                            <Label htmlFor="evidencia" className="font-semibold text-gray-700">
+                                📎 Adjuntar Evidencia (Opcional)
+                            </Label>
+                            <Input
+                                id="evidencia"
+                                type="file"
+                                accept="image/*,application/pdf"
+                                className="mt-2 bg-white cursor-pointer"
+                                onChange={(e) => {
+                                    const selectedFile = e.target.files?.[0];
+                                    if (selectedFile) setFile(selectedFile);
+                                }}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                Formatos: JPG, PNG, PDF. (Máx 5MB)
+                            </p>
+                        </div>
+
+                        {/* Botones de Acción Responsive */}
                         <div className="flex flex-col sm:flex-row gap-4 pt-4">
                             <Button
                                 type="button"
