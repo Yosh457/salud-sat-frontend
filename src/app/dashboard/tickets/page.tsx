@@ -134,7 +134,7 @@ export default function TicketsPage() {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => alert(`Pronto veremos detalle del ID: ${ticket.id}`)}
+                                                onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
                                             >
                                                 Ver Detalle
                                             </Button>
