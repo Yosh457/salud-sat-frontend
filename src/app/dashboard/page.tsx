@@ -103,7 +103,7 @@ export default function DashboardPage() {
                     <Button variant="ghost" className="w-full justify-start font-bold bg-blue-50 text-blue-700">
                         📊 Resumen
                     </Button>
-                    <Button variant="ghost" className="w-full justify-start">
+                    <Button variant="ghost" className="w-full justify-start" onClick={() => router.push("/dashboard/tickets")}>
                         🎫 Mis Tickets
                     </Button>
                     <Button variant="ghost" className="w-full justify-start">
