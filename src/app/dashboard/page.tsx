@@ -106,7 +106,7 @@ export default function DashboardPage() {
                     <Button variant="ghost" className="w-full justify-start" onClick={() => router.push("/dashboard/tickets")}>
                         🎫 Mis Tickets
                     </Button>
-                    <Button variant="ghost" className="w-full justify-start">
+                    <Button variant="ghost" className="w-full justify-start" onClick={() => router.push("/dashboard/tickets/new")}>
                         ➕ Nuevo Ticket
                     </Button>
                     {user.rol === 'admin' && (
