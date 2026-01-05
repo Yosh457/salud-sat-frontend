@@ -20,6 +20,7 @@ interface TicketDetail {
     autor?: string;
     tecnico_id?: number; // Necesitamos el ID para saber quien está seleccionado
     tecnico?: string;
+    usuario_id: number;
 }
 
 interface Evidencia {
@@ -44,7 +45,7 @@ export default function TicketDetailPage() {
     const [ticket, setTicket] = useState<TicketDetail | null>(null);
     const [evidencias, setEvidencias] = useState<Evidencia[]>([]);
     const [tecnicos, setTecnicos] = useState<Usuario[]>([]); // Lista para el select
-    const [currentUser, setCurrentUser] = useState<{ rol: string } | null>(null); // Para permisos
+    const [currentUser, setCurrentUser] = useState<{ id: number; rol: string } | null>(null); // Para permisos
 
     // Estado de carga
     const [loading, setLoading] = useState(true);
@@ -64,7 +65,7 @@ export default function TicketDetailPage() {
         // Decodificar rol del usuario actual
         try {
             const payload = JSON.parse(atob(token.split(".")[1]));
-            setCurrentUser({ rol: payload.rol });
+            setCurrentUser({ id: payload.id, rol: payload.rol });
         } catch (e) {
             console.error("Error leyendo token", e);
         }
@@ -85,7 +86,7 @@ export default function TicketDetailPage() {
                     const t = dataTicket.data;
                     setTicket(t);
                     // Inicializar los selects con los valores actuales del ticket
-                    setSelectedStatus(t.estado);
+                    setSelectedStatus(t.estado || "");
                     setSelectedTech(t.tecnico_id ? t.tecnico_id.toString() : "0");
                 }
                 if (dataEvidence.status === "success") setEvidencias(dataEvidence.data);
@@ -111,14 +112,14 @@ export default function TicketDetailPage() {
     }, [ticketId, router]);
 
     // Función para guardar cambios (Estado o Técnico)
-    const handleUpdate = async () => {
+    const handleUpdate = async (overrideStatus?: string, overrideTech?: number) => {
         setSaving(true);
         const token = localStorage.getItem("sat_token");
 
         try {
             const body = {
-                estado: selectedStatus,
-                tecnico_id: selectedTech !== "0" ? parseInt(selectedTech) : null
+                estado: overrideStatus || selectedStatus,
+                tecnico_id: overrideTech !== undefined ? overrideTech : (selectedTech !== "0" ? parseInt(selectedTech) : null)
             };
 
             const response = await fetch(`http://localhost:3000/api/tickets/${ticketId}`, {
@@ -173,8 +174,12 @@ export default function TicketDetailPage() {
                         <CardHeader>
                             <div className="flex items-center gap-3 mb-2">
                                 <Badge variant="outline">#{ticket.id}</Badge>
-                                <Badge className={getPriorityColor(ticket.prioridad)}>{ticket.prioridad.toUpperCase()}</Badge>
-                                <Badge variant="secondary" className="uppercase">{ticket.estado.replace('_', ' ')}</Badge>
+                                <Badge className={getPriorityColor(ticket.prioridad)}>
+                                    {ticket.prioridad?.toUpperCase() || "SIN PRIORIDAD"}
+                                </Badge>
+                                <Badge variant="secondary" className="uppercase">
+                                    {ticket.estado?.replace('_', ' ') || "SIN ESTADO"}
+                                </Badge>
                             </div>
                             <CardTitle className="text-2xl text-blue-800">{ticket.titulo}</CardTitle>
                             <CardDescription>
@@ -232,31 +237,16 @@ export default function TicketDetailPage() {
                     </Card>
                 </div>
 
-                {/* COLUMNA DERECHA: Panel de Gestión (Solo Admin/Técnico) */}
+                {/* COLUMNA DERECHA: Panel de Gestión */}
                 <div className="lg:col-span-1">
-                    {currentUser?.rol !== 'funcionario' ? (
+                    {/* VISTA ADMIN */}
+                    {currentUser?.rol === 'admin' && (
                         <Card className="border-blue-200 shadow-md">
                             <CardHeader className="bg-blue-50 border-b border-blue-100">
                                 <CardTitle className="text-lg text-blue-800">🛠️ Panel de Gestión</CardTitle>
                                 <CardDescription>Acciones de soporte técnico</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4 pt-6">
-
-                                {/* Selector de Estado */}
-                                <div className="space-y-2">
-                                    <Label>Estado del Ticket</Label>
-                                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Cambiar estado" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="pendiente">Pendiente</SelectItem>
-                                            <SelectItem value="en_proceso">En Proceso</SelectItem>
-                                            <SelectItem value="resuelto">Resuelto</SelectItem>
-                                            <SelectItem value="cerrado">Cerrado</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
 
                                 {/* Selector de Técnico */}
                                 <div className="space-y-2">
@@ -267,27 +257,64 @@ export default function TicketDetailPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="0">-- Sin Asignar --</SelectItem>
-                                            {tecnicos.map(tech => (
-                                                <SelectItem key={tech.id} value={tech.id.toString()}>
-                                                    {tech.nombre_completo}
+                                            {tecnicos.map(t => (
+                                                <SelectItem key={t.id} value={t.id.toString()}>
+                                                    {t.nombre_completo}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
 
+                                {/* Botón Guardar - Ahora llamamos handleUpdate SIN pasar estado */}
                                 <Button
                                     className="w-full bg-blue-600 hover:bg-blue-700 mt-4"
-                                    onClick={handleUpdate}
+                                    onClick={() => handleUpdate(undefined)} // Undefined estado = Backend decide
                                     disabled={saving}
                                 >
-                                    {saving ? "Guardando..." : "Actualizar Ticket"}
+                                    {saving ? "Guardando..." : "Guardar Asignación"}
                                 </Button>
-
                             </CardContent>
                         </Card>
-                    ) : (
-                        // Vista para Funcionario (Solo info, sin controles)
+                    )}
+
+                    {/* VISTA TÉCNICO: Tomar o Resolver */}
+                    {currentUser?.rol === 'tecnico' && (
+                        <Card className="border-green-200 shadow-md">
+                            <CardHeader className="bg-green-50 border-b border-green-100">
+                                <CardTitle className="text-lg text-green-800">🛠️ Acciones Técnicas</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4 pt-6">
+                                {/* Si no es mio y no tiene técnico -> Lo tomo */}
+                                {ticket.tecnico_id !== currentUser.id && ticket.tecnico_id === null ? (
+                                    <Button
+                                        className="w-full bg-blue-600 hover:bg-blue-700"
+                                        onClick={() => handleUpdate(undefined, currentUser.id)} // Me asigno, estado auto
+                                        disabled={saving}
+                                    >
+                                        ✋ Tomar este Caso
+                                    </Button>
+                                ) : ticket.tecnico_id === currentUser.id ? (
+                                    /* Si es mio -> Lo resuelvo */
+                                    <div className="space-y-4">
+                                        <p className="text-sm text-gray-600">Ticket asignado a ti.</p>
+                                        <Button
+                                            className="w-full bg-green-600 hover:bg-green-700"
+                                            onClick={() => handleUpdate('resuelto')} // Fuerzo estado resuelto
+                                            disabled={saving || ticket.estado === 'resuelto'}
+                                        >
+                                            ✅ Marcar como Resuelto
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-red-500">Este ticket pertenece a otro técnico.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
+                    
+                    {/* VISTA FUNCIONARIO */}
+                    {currentUser?.rol === 'funcionario' && (
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-lg text-gray-600">Estado del Caso</CardTitle>

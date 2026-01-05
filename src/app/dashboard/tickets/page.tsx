@@ -119,12 +119,12 @@ export default function TicketsPage() {
                                         </TableCell>
                                         <TableCell>
                                             <Badge className={getPriorityColor(ticket.prioridad)}>
-                                                {ticket.prioridad.toUpperCase()}
+                                                {ticket.prioridad ? ticket.prioridad.toUpperCase() : "S/P"}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
                                             <Badge className={getStatusColor(ticket.estado)}>
-                                                {ticket.estado.replace("_", " ").toUpperCase()}
+                                                {ticket.estado ? ticket.estado.replace("_", " ").toUpperCase() : "S/E"}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>

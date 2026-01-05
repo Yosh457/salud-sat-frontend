@@ -35,18 +35,34 @@ export default function DashboardPage() {
         }
 
         try {
+            // 1. Decodificar Token (Solo para obtener ID y Rol inicial)
             const payload = JSON.parse(atob(token.split(".")[1]));
+
+            // Estado inicial temporal (sin nombre aún)
             setUser({
                 rut: payload.rut,
                 rol: payload.rol,
-                nombre: payload.nombre
+                nombre: "Cargando..." // Placeholder mientras carga
             });
 
-            // B. Llamada a la API de Estadísticas
-            // Solo si el usuario es Admin o Técnico (Funcionario no tiene acceso a stats globales)
-            // Aunque tu endpoint de stats devuelve data, el funcionario no debería ver "todo".
-            // Por simplicidad, cargaremos los datos, pero visualmente filtraremos si es necesario.
-            fetchStats(token);
+            // 2. Pedir datos reales del usuario a la API (UTF-8 Seguro)
+            fetch("http://localhost:3000/api/users/me", {
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+                .then(async (res) => {
+                    if (res.ok) {
+                        const dataUser = await res.json();
+                        // Actualizamos el estado con el nombre correcto de la BD
+                        setUser(prev => prev ? { ...prev, nombre: dataUser.data.nombre } : null);
+                    }
+                });
+
+            // 3. Cargar Stats (Solo cargar stats si NO es funcionario)
+            if (payload.rol !== 'funcionario') {
+                fetchStats(token);
+            } else {
+                setLoadingStats(false);
+            }
 
         } catch (e) {
             localStorage.removeItem("sat_token");
@@ -103,17 +119,16 @@ export default function DashboardPage() {
                     <Button variant="ghost" className="w-full justify-start font-bold bg-blue-50 text-blue-700">
                         📊 Resumen
                     </Button>
+                    {/* Botón Dinámico según Rol */}
                     <Button variant="ghost" className="w-full justify-start" onClick={() => router.push("/dashboard/tickets")}>
-                        🎫 Mis Tickets
+                        {user.rol === 'admin' ? '🌍 Gestión Global' :
+                            user.rol === 'tecnico' ? '📥 Bandeja de Casos' :
+                                '🎫 Mis Solicitudes'}
                     </Button>
+
                     <Button variant="ghost" className="w-full justify-start" onClick={() => router.push("/dashboard/tickets/new")}>
                         ➕ Nuevo Ticket
                     </Button>
-                    {user.rol === 'admin' && (
-                        <Button variant="ghost" className="w-full justify-start text-purple-600">
-                            👥 Usuarios (Admin)
-                        </Button>
-                    )}
                 </nav>
             </aside>
 
@@ -133,61 +148,75 @@ export default function DashboardPage() {
                     </Button>
                 </header>
 
-                {/* KPIs / Tarjetas de Estadísticas */}
-                <div className="grid gap-4 md:grid-cols-3">
+                {/* KPIs / Tarjetas de Estadísticas (Solo visibles para Admin y Técnico) */}
+                {user.rol !== 'funcionario' ? (
+                    <div className="grid gap-4 md:grid-cols-3">
 
-                    {/* Tarjeta 1: Pendientes */}
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-500">
-                                Tickets Pendientes
-                            </CardTitle>
-                            <span className="text-2xl">⏳</span>
+                        {/* Tarjeta 1: Pendientes */}
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-gray-500">
+                                    Tickets Pendientes
+                                </CardTitle>
+                                <span className="text-2xl">⏳</span>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-orange-600">
+                                    {loadingStats ? "..." : getCount(stats?.resumen_estados, 'estado', 'pendiente')}
+                                </div>
+                                <p className="text-xs text-muted-foreground">Requieren atención inicial</p>
+                            </CardContent>
+                        </Card>
+
+                        {/* Tarjeta 2: En Proceso */}
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-gray-500">
+                                    En Proceso
+                                </CardTitle>
+                                <span className="text-2xl">🔧</span>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-blue-600">
+                                    {loadingStats ? "..." : getCount(stats?.resumen_estados, 'estado', 'en_proceso')}
+                                </div>
+                                <p className="text-xs text-muted-foreground">Están siendo atendidos</p>
+                            </CardContent>
+                        </Card>
+
+                        {/* Tarjeta 3: Críticos (Alta Prioridad) */}
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-gray-500">
+                                    Prioridad Alta/Crítica
+                                </CardTitle>
+                                <span className="text-2xl">🚨</span>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-red-600">
+                                    {loadingStats ? "..." : (
+                                        getCount(stats?.alertas_prioridad, 'prioridad', 'alta') +
+                                        getCount(stats?.alertas_prioridad, 'prioridad', 'critica')
+                                    )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">Urgencias activas</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                ) : (
+                    // Vista Dashboard Funcionario
+                    <Card className="bg-blue-50 border-blue-200">
+                        <CardHeader>
+                            <CardTitle className="text-blue-800">Panel del Funcionario</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-orange-600">
-                                {loadingStats ? "..." : getCount(stats?.resumen_estados, 'estado', 'pendiente')}
-                            </div>
-                            <p className="text-xs text-muted-foreground">Requieren atención inicial</p>
+                            <p className="text-gray-700">
+                                Desde aquí puedes revisar el estado de tus solicitudes o crear nuevos requerimientos técnicos.
+                                Selecciona una opción del menú lateral para comenzar.
+                            </p>
                         </CardContent>
                     </Card>
-
-                    {/* Tarjeta 2: En Proceso */}
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-500">
-                                En Proceso
-                            </CardTitle>
-                            <span className="text-2xl">🔧</span>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-blue-600">
-                                {loadingStats ? "..." : getCount(stats?.resumen_estados, 'estado', 'en_proceso')}
-                            </div>
-                            <p className="text-xs text-muted-foreground">Están siendo atendidos</p>
-                        </CardContent>
-                    </Card>
-
-                    {/* Tarjeta 3: Críticos (Alta Prioridad) */}
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-500">
-                                Prioridad Alta/Crítica
-                            </CardTitle>
-                            <span className="text-2xl">🚨</span>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-red-600">
-                                {loadingStats ? "..." : (
-                                    getCount(stats?.alertas_prioridad, 'prioridad', 'alta') +
-                                    getCount(stats?.alertas_prioridad, 'prioridad', 'critica')
-                                )}
-                            </div>
-                            <p className="text-xs text-muted-foreground">Urgencias activas</p>
-                        </CardContent>
-                    </Card>
-
-                </div>
+                )}
             </main>
         </div>
     );
