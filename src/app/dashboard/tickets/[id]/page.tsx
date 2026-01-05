@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { TicketHistory } from "@/components/TicketHistory";
 
 // Definimos los tipos
 interface TicketDetail {
@@ -44,6 +45,7 @@ export default function TicketDetailPage() {
     // Estados de datos
     const [ticket, setTicket] = useState<TicketDetail | null>(null);
     const [evidencias, setEvidencias] = useState<Evidencia[]>([]);
+    const [historial, setHistorial] = useState<any[]>([]); // 👈 Estado Historial
     const [tecnicos, setTecnicos] = useState<Usuario[]>([]); // Lista para el select
     const [currentUser, setCurrentUser] = useState<{ id: number; rol: string } | null>(null); // Para permisos
 
@@ -73,14 +75,16 @@ export default function TicketDetailPage() {
         // Cargar datos iniciales
         const fetchData = async () => {
             try {
-                // 1. Cargar Ticket y Evidencias
-                const [resTicket, resEvidence] = await Promise.all([
+                // 1. Cargar Ticket, Evidencias e Historial en paralelo
+                const [resTicket, resEvidence, resHistory] = await Promise.all([
                     fetch(`http://localhost:3000/api/tickets/${ticketId}`, { headers: { Authorization: `Bearer ${token}` } }),
-                    fetch(`http://localhost:3000/api/tickets/${ticketId}/evidencia`, { headers: { Authorization: `Bearer ${token}` } })
+                    fetch(`http://localhost:3000/api/tickets/${ticketId}/evidencia`, { headers: { Authorization: `Bearer ${token}` } }),
+                    fetch(`http://localhost:3000/api/tickets/${ticketId}/historial`, { headers: { Authorization: `Bearer ${token}` } }) // 👈 Petición Historial
                 ]);
 
                 const dataTicket = await resTicket.json();
                 const dataEvidence = await resEvidence.json();
+                const dataHistory = await resHistory.json(); // 👈 Data Historial
 
                 if (dataTicket.status === "success") {
                     const t = dataTicket.data;
@@ -90,6 +94,7 @@ export default function TicketDetailPage() {
                     setSelectedTech(t.tecnico_id ? t.tecnico_id.toString() : "0");
                 }
                 if (dataEvidence.status === "success") setEvidencias(dataEvidence.data);
+                if (dataHistory.status === "success") setHistorial(dataHistory.data); // 👈 Setear Historial
 
                 // 2. Si NO es funcionario, cargar lista de técnicos para asignar
                 const payload = JSON.parse(atob(token.split(".")[1]));
@@ -235,6 +240,8 @@ export default function TicketDetailPage() {
                             </div>
                         </CardContent>
                     </Card>
+                    {/* 👇 AQUÍ RENDERIZAMOS EL HISTORIAL (Línea de Tiempo) 👇 */}
+                    <TicketHistory historial={historial} />
                 </div>
 
                 {/* COLUMNA DERECHA: Panel de Gestión */}
@@ -312,7 +319,7 @@ export default function TicketDetailPage() {
                             </CardContent>
                         </Card>
                     )}
-                    
+
                     {/* VISTA FUNCIONARIO */}
                     {currentUser?.rol === 'funcionario' && (
                         <Card>
