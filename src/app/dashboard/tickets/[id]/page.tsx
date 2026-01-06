@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { TicketHistory } from "@/components/TicketHistory";
+import Swal from "sweetalert2";
 
 // Definimos los tipos
 interface TicketDetail {
@@ -137,11 +138,17 @@ export default function TicketDetailPage() {
             });
 
             if (response.ok) {
-                alert("Ticket actualizado correctamente");
-                // Recargar la página para ver cambios reflejados (simple refresh)
+                // Mostrar alerta de éxito
+                await Swal.fire({
+                    title: '¡Actualizado!',
+                    text: 'El ticket se ha actualizado correctamente.',
+                    icon: 'success',
+                    timer: 2000, // Se cierra solo en 2 segundos
+                    showConfirmButton: false
+                });
                 window.location.reload();
-            } else {
-                alert("Error al actualizar");
+            } else { // Para errores
+                Swal.fire('Error', 'No se pudo actualizar el ticket', 'error');
             }
 
         } catch (error) {

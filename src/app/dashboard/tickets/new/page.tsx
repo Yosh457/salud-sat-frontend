@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form"; // 👈 Importamos Controller
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import Swal from "sweetalert2";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,11 +83,25 @@ export default function NewTicketPage() {
                         body: formData,
                     });
                 }
+                // Mostrar alerta de éxito
+                Swal.fire({
+                    title: '¡Solicitud Creada!',
+                    text: 'Tu ticket ha sido ingresado exitosamente.',
+                    icon: 'success',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#2563eb' // Azul de tu marca
+                }).then(() => {
+                    router.push("/dashboard/tickets"); // Volver al listado
+                });
 
-                alert("Ticket creado exitosamente");
-                router.push("/dashboard/tickets"); // Volver al listado
             } else {
-                alert(result.message || "Error al crear el ticket");
+                // Para errores
+                Swal.fire({
+                    title: 'Error',
+                    text: result.message || "Error al crear el ticket",
+                    icon: 'error',
+                    confirmButtonColor: '#d33'
+                });
             }
         } catch (error) {
             console.error(error);
