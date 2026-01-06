@@ -90,6 +90,31 @@ export default function DashboardPage() {
         }
     };
 
+    // Función para descargar el Excel
+    const handleDownloadReport = async () => {
+        try {
+            const token = localStorage.getItem("sat_token");
+            const response = await fetch("http://localhost:3000/api/reports/excel", {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error("Error al generar reporte");
+
+            // Truco para descargar archivo BLOB (Binary Large Object)
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `reporte_sat_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (error) {
+            console.error(error);
+            alert("No se pudo descargar el reporte");
+        }
+    };
+
     const handleLogout = () => {
         localStorage.removeItem("sat_token");
         router.push("/");
@@ -129,6 +154,16 @@ export default function DashboardPage() {
                     <Button variant="ghost" className="w-full justify-start" onClick={() => router.push("/dashboard/tickets/new")}>
                         ➕ Nuevo Ticket
                     </Button>
+                    {/* 🆕 Botón de Reportes (Solo Admin) */}
+                    {user.rol === 'admin' && (
+                        <Button
+                            variant="ghost"
+                            className="w-full justify-start text-green-700 hover:text-green-800 hover:bg-green-50"
+                            onClick={handleDownloadReport}
+                        >
+                            📈 Descargar Reporte
+                        </Button>
+                    )}
                 </nav>
             </aside>
 
