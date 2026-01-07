@@ -46,7 +46,7 @@ export default function DashboardPage() {
             });
 
             // 2. Pedir datos reales del usuario a la API (UTF-8 Seguro)
-            fetch("http://localhost:3000/api/users/me", {
+            fetch("https://api-sat.mahosalud.cl/api/users/me", {
                 headers: { "Authorization": `Bearer ${token}` }
             })
                 .then(async (res) => {
@@ -73,7 +73,7 @@ export default function DashboardPage() {
     // Función asíncrona para pedir los números
     const fetchStats = async (token: string) => {
         try {
-            const response = await fetch("http://localhost:3000/api/stats/dashboard", {
+            const response = await fetch("https://api-sat.mahosalud.cl/api/stats/dashboard", {
                 headers: {
                     "Authorization": `Bearer ${token}` // 👈 Importante: Enviar el token
                 }
@@ -94,7 +94,7 @@ export default function DashboardPage() {
     const handleDownloadReport = async () => {
         try {
             const token = localStorage.getItem("sat_token");
-            const response = await fetch("http://localhost:3000/api/reports/excel", {
+            const response = await fetch("https://api-sat.mahosalud.cl/api/reports/excel", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
 

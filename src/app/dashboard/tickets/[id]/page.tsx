@@ -78,9 +78,9 @@ export default function TicketDetailPage() {
             try {
                 // 1. Cargar Ticket, Evidencias e Historial en paralelo
                 const [resTicket, resEvidence, resHistory] = await Promise.all([
-                    fetch(`http://localhost:3000/api/tickets/${ticketId}`, { headers: { Authorization: `Bearer ${token}` } }),
-                    fetch(`http://localhost:3000/api/tickets/${ticketId}/evidencia`, { headers: { Authorization: `Bearer ${token}` } }),
-                    fetch(`http://localhost:3000/api/tickets/${ticketId}/historial`, { headers: { Authorization: `Bearer ${token}` } }) // 👈 Petición Historial
+                    fetch(`https://api-sat.mahosalud.cl/api/tickets/${ticketId}`, { headers: { Authorization: `Bearer ${token}` } }),
+                    fetch(`https://api-sat.mahosalud.cl/api/tickets/${ticketId}/evidencia`, { headers: { Authorization: `Bearer ${token}` } }),
+                    fetch(`https://api-sat.mahosalud.cl/api/tickets/${ticketId}/historial`, { headers: { Authorization: `Bearer ${token}` } }) // 👈 Petición Historial
                 ]);
 
                 const dataTicket = await resTicket.json();
@@ -100,7 +100,7 @@ export default function TicketDetailPage() {
                 // 2. Si NO es funcionario, cargar lista de técnicos para asignar
                 const payload = JSON.parse(atob(token.split(".")[1]));
                 if (payload.rol !== 'funcionario') {
-                    const resTechs = await fetch(`http://localhost:3000/api/users/tecnicos`, {
+                    const resTechs = await fetch(`https://api-sat.mahosalud.cl/api/users/tecnicos`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     const dataTechs = await resTechs.json();
@@ -128,7 +128,7 @@ export default function TicketDetailPage() {
                 tecnico_id: overrideTech !== undefined ? overrideTech : (selectedTech !== "0" ? parseInt(selectedTech) : null)
             };
 
-            const response = await fetch(`http://localhost:3000/api/tickets/${ticketId}`, {
+            const response = await fetch(`https://api-sat.mahosalud.cl/api/tickets/${ticketId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -228,7 +228,7 @@ export default function TicketDetailPage() {
                                         {evidencias.map((ev) => (
                                             <a
                                                 key={ev.id}
-                                                href={`http://localhost:3000${ev.ruta_archivo}`}
+                                                href={`https://api-sat.mahosalud.cl${ev.ruta_archivo}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="flex items-center gap-3 p-3 border rounded-lg hover:bg-blue-50 transition-colors group"

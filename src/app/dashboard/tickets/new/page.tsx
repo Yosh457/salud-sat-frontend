@@ -54,7 +54,7 @@ export default function NewTicketPage() {
 
         try {
             // Paso 1: Crear el ticket
-            const response = await fetch("http://localhost:3000/api/tickets", {
+            const response = await fetch("https://api-sat.mahosalud.cl/api/tickets", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -74,7 +74,7 @@ export default function NewTicketPage() {
                     formData.append("evidencia", file); // Debe coincidir con upload.single('evidencia') en backend
 
                     // Llamada al endpoint de subida
-                    await fetch(`http://localhost:3000/api/tickets/${newTicketId}/evidencia`, {
+                    await fetch(`https://api-sat.mahosalud.cl/api/tickets/${newTicketId}/evidencia`, {
                         method: "POST",
                         headers: {
                             "Authorization": `Bearer ${token}`,

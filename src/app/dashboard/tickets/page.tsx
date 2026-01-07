@@ -41,7 +41,7 @@ export default function TicketsPage() {
 
     const fetchTickets = async (token: string) => {
         try {
-            const response = await fetch("http://localhost:3000/api/tickets", {
+            const response = await fetch("https://api-sat.mahosalud.cl/api/tickets", {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const result = await response.json();
