@@ -133,7 +133,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="flex min-h-screen bg-gray-100">
+        <div className="flex flex-1 bg-gray-100">
             {/* SIDEBAR */}
             <aside className="w-64 bg-white shadow-md hidden md:block">
                 <div className="p-6">

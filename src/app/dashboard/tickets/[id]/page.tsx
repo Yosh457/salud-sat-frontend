@@ -171,7 +171,7 @@ export default function TicketDetailPage() {
     if (!ticket) return <div className="p-8 text-center text-red-500">Ticket no encontrado</div>;
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
+        <div className="bg-gray-100 p-8">
             {/* Encabezado con botón Volver */}
             <div className="max-w-6xl mx-auto mb-6 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-700">Detalle de Solicitud</h2>

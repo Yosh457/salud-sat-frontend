@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation"; // Para redirigir después del login
+import Image from "next/image"; // 👈 Importar Image
 
 // Importamos tus componentes visuales (shadcn/ui)
 import { Button } from "@/components/ui/button";
@@ -75,8 +76,19 @@ export function LoginForm() {
     };
 
     return (
-        <Card className="w-full max-w-md shadow-lg">
-            <CardHeader className="text-center">
+        <Card className="w-full max-w-md shadow-xl border-t-4 border-t-blue-600 bg-white">
+            <CardHeader className="text-center pb-2">
+                {/* 👇 LOGO APS EN EL LOGIN */}
+                <div className="flex justify-center mb-4">
+                    <Image 
+                        src="/Logo_Red_APS.png" 
+                        alt="Red de Atención Primaria" 
+                        width={140} 
+                        height={140} 
+                        className="object-contain h-24 w-auto"
+                        priority
+                    />
+                </div>
                 <CardTitle className="text-2xl font-bold text-blue-700">SAT Salud</CardTitle>
                 <CardDescription>Sistema de Asistencia Técnica - Alto Hospicio</CardDescription>
             </CardHeader>

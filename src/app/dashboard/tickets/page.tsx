@@ -77,7 +77,7 @@ export default function TicketsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
+        <div className="flex-1 bg-gray-100 p-8">
             <div className="mb-6 flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800">Gestión de Tickets</h1>

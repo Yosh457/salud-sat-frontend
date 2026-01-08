@@ -112,7 +112,7 @@ export default function NewTicketPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8 flex justify-center items-start">
+        <div className="flex-1 bg-gray-100 p-8 flex justify-center items-start">
             <Card className="w-full max-w-2xl">
                 <CardHeader>
                     <CardTitle className="text-2xl text-blue-700">Nuevo Ticket de Soporte</CardTitle>
