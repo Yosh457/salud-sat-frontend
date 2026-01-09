@@ -14,6 +14,12 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+    throw new Error("NEXT_PUBLIC_API_URL no está definida. Revisa tu archivo .env");
+}
+
 // Definimos la estructura exacta de tu Ticket
 interface Ticket {
     id: number;
@@ -41,7 +47,7 @@ export default function TicketsPage() {
 
     const fetchTickets = async (token: string) => {
         try {
-            const response = await fetch("https://api-sat.mahosalud.cl/api/tickets", {
+            const response = await fetch(`${API_URL}/api/tickets`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const result = await response.json();
@@ -77,7 +83,7 @@ export default function TicketsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
+        <div className="flex-1 bg-gray-100 p-8">
             <div className="mb-6 flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800">Gestión de Tickets</h1>

@@ -20,6 +20,12 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+    throw new Error("NEXT_PUBLIC_API_URL no está definida. Revisa tu archivo .env");
+}
+
 // 1. Esquema de Validación
 const ticketSchema = z.object({
     titulo: z.string().min(5, "El título debe tener al menos 5 caracteres"),
@@ -54,7 +60,7 @@ export default function NewTicketPage() {
 
         try {
             // Paso 1: Crear el ticket
-            const response = await fetch("https://api-sat.mahosalud.cl/api/tickets", {
+            const response = await fetch(`${API_URL}/api/tickets`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -74,7 +80,7 @@ export default function NewTicketPage() {
                     formData.append("evidencia", file); // Debe coincidir con upload.single('evidencia') en backend
 
                     // Llamada al endpoint de subida
-                    await fetch(`https://api-sat.mahosalud.cl/api/tickets/${newTicketId}/evidencia`, {
+                    await fetch(`${API_URL}/api/tickets/${newTicketId}/evidencia`, {
                         method: "POST",
                         headers: {
                             "Authorization": `Bearer ${token}`,
@@ -112,7 +118,7 @@ export default function NewTicketPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8 flex justify-center items-start">
+        <div className="flex-1 bg-gray-100 p-8 flex justify-center items-start">
             <Card className="w-full max-w-2xl">
                 <CardHeader>
                     <CardTitle className="text-2xl text-blue-700">Nuevo Ticket de Soporte</CardTitle>

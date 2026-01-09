@@ -2,13 +2,11 @@ import { LoginForm } from "@/components/LoginForm";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4">
-      {/* Simplemente renderizamos nuestro componente inteligente */}
+    // CAMBIO: Quitamos "min-h-screen" y usamos "flex-grow h-full"
+    // Esto hace que ocupe solo el espacio disponible entre el header (si hubiera) y el footer
+    <div className="flex flex-col items-center justify-center p-4 h-full flex-grow py-20">
       <LoginForm />
-      
-      <p className="mt-8 text-sm text-gray-500">
-        © 2025 Unidad de TICs - Departamento de Salud
-      </p>
-    </main>
+      {/* Eliminado el texto de copyright duplicado */}
+    </div>
   );
 }

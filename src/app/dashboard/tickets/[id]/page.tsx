@@ -10,6 +10,12 @@ import { Label } from "@/components/ui/label";
 import { TicketHistory } from "@/components/TicketHistory";
 import Swal from "sweetalert2";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+    throw new Error("NEXT_PUBLIC_API_URL no está definida. Revisa tu archivo .env");
+}
+
 // Definimos los tipos
 interface TicketDetail {
     id: number;
@@ -78,9 +84,9 @@ export default function TicketDetailPage() {
             try {
                 // 1. Cargar Ticket, Evidencias e Historial en paralelo
                 const [resTicket, resEvidence, resHistory] = await Promise.all([
-                    fetch(`https://api-sat.mahosalud.cl/api/tickets/${ticketId}`, { headers: { Authorization: `Bearer ${token}` } }),
-                    fetch(`https://api-sat.mahosalud.cl/api/tickets/${ticketId}/evidencia`, { headers: { Authorization: `Bearer ${token}` } }),
-                    fetch(`https://api-sat.mahosalud.cl/api/tickets/${ticketId}/historial`, { headers: { Authorization: `Bearer ${token}` } }) // 👈 Petición Historial
+                    fetch(`${API_URL}/api/tickets/${ticketId}`, { headers: { Authorization: `Bearer ${token}` } }),
+                    fetch(`${API_URL}/api/tickets/${ticketId}/evidencia`, { headers: { Authorization: `Bearer ${token}` } }),
+                    fetch(`${API_URL}/api/tickets/${ticketId}/historial`, { headers: { Authorization: `Bearer ${token}` } }) // 👈 Petición Historial
                 ]);
 
                 const dataTicket = await resTicket.json();
@@ -100,7 +106,7 @@ export default function TicketDetailPage() {
                 // 2. Si NO es funcionario, cargar lista de técnicos para asignar
                 const payload = JSON.parse(atob(token.split(".")[1]));
                 if (payload.rol !== 'funcionario') {
-                    const resTechs = await fetch(`https://api-sat.mahosalud.cl/api/users/tecnicos`, {
+                    const resTechs = await fetch(`${API_URL}/api/users/tecnicos`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     const dataTechs = await resTechs.json();
@@ -128,7 +134,7 @@ export default function TicketDetailPage() {
                 tecnico_id: overrideTech !== undefined ? overrideTech : (selectedTech !== "0" ? parseInt(selectedTech) : null)
             };
 
-            const response = await fetch(`https://api-sat.mahosalud.cl/api/tickets/${ticketId}`, {
+            const response = await fetch(`${API_URL}/api/tickets/${ticketId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -171,7 +177,7 @@ export default function TicketDetailPage() {
     if (!ticket) return <div className="p-8 text-center text-red-500">Ticket no encontrado</div>;
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
+        <div className="bg-gray-100 p-8">
             {/* Encabezado con botón Volver */}
             <div className="max-w-6xl mx-auto mb-6 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-700">Detalle de Solicitud</h2>
@@ -228,7 +234,7 @@ export default function TicketDetailPage() {
                                         {evidencias.map((ev) => (
                                             <a
                                                 key={ev.id}
-                                                href={`https://api-sat.mahosalud.cl${ev.ruta_archivo}`}
+                                                href={`${API_URL}${ev.ruta_archivo}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="flex items-center gap-3 p-3 border rounded-lg hover:bg-blue-50 transition-colors group"

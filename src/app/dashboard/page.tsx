@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+    throw new Error("NEXT_PUBLIC_API_URL no está definida. Revisa tu archivo .env");
+}
+
 // 1. Definimos la estructura de los datos que vienen de la API (Stats)
 interface StatItem {
     estado?: string;
@@ -46,7 +52,7 @@ export default function DashboardPage() {
             });
 
             // 2. Pedir datos reales del usuario a la API (UTF-8 Seguro)
-            fetch("https://api-sat.mahosalud.cl/api/users/me", {
+            fetch(`${API_URL}/api/users/me`, {
                 headers: { "Authorization": `Bearer ${token}` }
             })
                 .then(async (res) => {
@@ -73,7 +79,7 @@ export default function DashboardPage() {
     // Función asíncrona para pedir los números
     const fetchStats = async (token: string) => {
         try {
-            const response = await fetch("https://api-sat.mahosalud.cl/api/stats/dashboard", {
+            const response = await fetch(`${API_URL}/api/stats/dashboard`, {
                 headers: {
                     "Authorization": `Bearer ${token}` // 👈 Importante: Enviar el token
                 }
@@ -94,7 +100,7 @@ export default function DashboardPage() {
     const handleDownloadReport = async () => {
         try {
             const token = localStorage.getItem("sat_token");
-            const response = await fetch("https://api-sat.mahosalud.cl/api/reports/excel", {
+            const response = await fetch(`${API_URL}/api/reports/excel`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
 
@@ -133,7 +139,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="flex min-h-screen bg-gray-100">
+        <div className="flex flex-1 bg-gray-100">
             {/* SIDEBAR */}
             <aside className="w-64 bg-white shadow-md hidden md:block">
                 <div className="p-6">
