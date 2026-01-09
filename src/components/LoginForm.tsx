@@ -13,6 +13,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+    throw new Error("NEXT_PUBLIC_API_URL no está definida. Revisa tu archivo .env");
+}
+
 // 1️⃣ Definimos el esquema de validación con Zod (Las reglas del juego)
 const loginSchema = z.object({
     rut: z.string().min(1, "El RUT es obligatorio"), // Validamos que no esté vacío
@@ -43,7 +49,7 @@ export function LoginForm() {
 
         try {
             // Llamada a tu Backend Node.js
-            const response = await fetch("http://localhost:3000/api/auth/login", {
+            const response = await fetch(`${API_URL}/api/auth/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -66,7 +72,7 @@ export function LoginForm() {
             // Redirigimos al Dashboard
             // Comentamos la alerta para no interrumpir el flujo
             // alert("¡Login Exitoso! Token guardado.");
-            router.push("/dashboard"); 
+            router.push("/dashboard");
 
         } catch (err: any) {
             setError(err.message); // Mostramos el error en pantalla
@@ -80,11 +86,11 @@ export function LoginForm() {
             <CardHeader className="text-center pb-2">
                 {/* 👇 LOGO APS EN EL LOGIN */}
                 <div className="flex justify-center mb-4">
-                    <Image 
-                        src="/Logo_Red_APS.png" 
-                        alt="Red de Atención Primaria" 
-                        width={140} 
-                        height={140} 
+                    <Image
+                        src="/Logo_Red_APS.png"
+                        alt="Red de Atención Primaria"
+                        width={140}
+                        height={140}
                         className="object-contain h-24 w-auto"
                         priority
                     />

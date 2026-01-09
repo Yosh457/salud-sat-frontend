@@ -14,6 +14,12 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+    throw new Error("NEXT_PUBLIC_API_URL no está definida. Revisa tu archivo .env");
+}
+
 // Definimos la estructura exacta de tu Ticket
 interface Ticket {
     id: number;
@@ -41,7 +47,7 @@ export default function TicketsPage() {
 
     const fetchTickets = async (token: string) => {
         try {
-            const response = await fetch("http://localhost:3000/api/tickets", {
+            const response = await fetch(`${API_URL}/api/tickets`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const result = await response.json();

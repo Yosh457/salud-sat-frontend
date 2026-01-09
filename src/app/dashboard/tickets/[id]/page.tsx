@@ -10,6 +10,12 @@ import { Label } from "@/components/ui/label";
 import { TicketHistory } from "@/components/TicketHistory";
 import Swal from "sweetalert2";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+    throw new Error("NEXT_PUBLIC_API_URL no está definida. Revisa tu archivo .env");
+}
+
 // Definimos los tipos
 interface TicketDetail {
     id: number;
@@ -78,9 +84,9 @@ export default function TicketDetailPage() {
             try {
                 // 1. Cargar Ticket, Evidencias e Historial en paralelo
                 const [resTicket, resEvidence, resHistory] = await Promise.all([
-                    fetch(`http://localhost:3000/api/tickets/${ticketId}`, { headers: { Authorization: `Bearer ${token}` } }),
-                    fetch(`http://localhost:3000/api/tickets/${ticketId}/evidencia`, { headers: { Authorization: `Bearer ${token}` } }),
-                    fetch(`http://localhost:3000/api/tickets/${ticketId}/historial`, { headers: { Authorization: `Bearer ${token}` } }) // 👈 Petición Historial
+                    fetch(`${API_URL}/api/tickets/${ticketId}`, { headers: { Authorization: `Bearer ${token}` } }),
+                    fetch(`${API_URL}/api/tickets/${ticketId}/evidencia`, { headers: { Authorization: `Bearer ${token}` } }),
+                    fetch(`${API_URL}/api/tickets/${ticketId}/historial`, { headers: { Authorization: `Bearer ${token}` } }) // 👈 Petición Historial
                 ]);
 
                 const dataTicket = await resTicket.json();
@@ -100,7 +106,7 @@ export default function TicketDetailPage() {
                 // 2. Si NO es funcionario, cargar lista de técnicos para asignar
                 const payload = JSON.parse(atob(token.split(".")[1]));
                 if (payload.rol !== 'funcionario') {
-                    const resTechs = await fetch(`http://localhost:3000/api/users/tecnicos`, {
+                    const resTechs = await fetch(`${API_URL}/api/users/tecnicos`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     const dataTechs = await resTechs.json();
@@ -128,7 +134,7 @@ export default function TicketDetailPage() {
                 tecnico_id: overrideTech !== undefined ? overrideTech : (selectedTech !== "0" ? parseInt(selectedTech) : null)
             };
 
-            const response = await fetch(`http://localhost:3000/api/tickets/${ticketId}`, {
+            const response = await fetch(`${API_URL}/api/tickets/${ticketId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -228,7 +234,7 @@ export default function TicketDetailPage() {
                                         {evidencias.map((ev) => (
                                             <a
                                                 key={ev.id}
-                                                href={`http://localhost:3000${ev.ruta_archivo}`}
+                                                href={`${API_URL}${ev.ruta_archivo}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="flex items-center gap-3 p-3 border rounded-lg hover:bg-blue-50 transition-colors group"
