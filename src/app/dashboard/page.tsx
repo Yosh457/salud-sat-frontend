@@ -160,15 +160,31 @@ export default function DashboardPage() {
                     <Button variant="ghost" className="w-full justify-start" onClick={() => router.push("/dashboard/tickets/new")}>
                         ➕ Nuevo Ticket
                     </Button>
-                    {/* 🆕 Botón de Reportes (Solo Admin) */}
+                    {/* --- ZONA ADMINISTRATIVA --- */}
                     {user.rol === 'admin' && (
-                        <Button
-                            variant="ghost"
-                            className="w-full justify-start text-green-700 hover:text-green-800 hover:bg-green-50"
-                            onClick={handleDownloadReport}
-                        >
-                            📈 Descargar Reporte
-                        </Button>
+                        <>
+                            <div className="pt-4 pb-2">
+                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider pl-2">Administración</p>
+                            </div>
+
+                            {/* 🆕 Botón de Gestión de Usuarios */}
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start text-purple-700 hover:text-purple-800 hover:bg-purple-50"
+                                onClick={() => router.push("/dashboard/admin/users")}
+                            >
+                                👥 Usuarios y Accesos
+                            </Button>
+
+                            {/* Botón de Reportes */}
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start text-green-700 hover:text-green-800 hover:bg-green-50"
+                                onClick={handleDownloadReport}
+                            >
+                                📈 Descargar Reporte
+                            </Button>
+                        </>
                     )}
                 </nav>
             </aside>

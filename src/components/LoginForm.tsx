@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
+// URL de la API (Manejada por variable de entorno)
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 if (!API_URL) {
@@ -20,8 +21,9 @@ if (!API_URL) {
 }
 
 // 1️⃣ Definimos el esquema de validación con Zod (Las reglas del juego)
+// CAMBIO: Ahora validamos EMAIL en lugar de RUT para la integración con Portal TICs
 const loginSchema = z.object({
-    rut: z.string().min(1, "El RUT es obligatorio"), // Validamos que no esté vacío
+    email: z.string().email("Ingresa un correo válido").min(1, "El correo es obligatorio"),
     password: z.string().min(1, "La contraseña es obligatoria"),
 });
 
@@ -49,6 +51,7 @@ export function LoginForm() {
 
         try {
             // Llamada a tu Backend Node.js
+            // CAMBIO: Enviamos el objeto con 'email' en lugar de 'rut'
             const response = await fetch(`${API_URL}/api/auth/login`, {
                 method: "POST",
                 headers: {
@@ -68,6 +71,8 @@ export function LoginForm() {
 
             // Guardamos el token en localStorage (Temporal, luego veremos cookies)
             localStorage.setItem("sat_token", result.token);
+            // Guardamos datos básicos del usuario para usarlos inmediatamente
+            localStorage.setItem("sat_user", JSON.stringify(result.user));
 
             // Redirigimos al Dashboard
             // Comentamos la alerta para no interrumpir el flujo
@@ -108,16 +113,16 @@ export function LoginForm() {
                         </div>
                     )}
 
-                    {/* Campo RUT */}
+                    {/* CAMBIO: Campo Email en lugar de RUT */}
                     <div className="space-y-2">
-                        <Label htmlFor="rut">RUT Funcionario</Label>
+                        <Label htmlFor="email">Correo Electrónico</Label>
                         <Input
-                            id="rut"
-                            placeholder="12345678-9"
-                            {...register("rut")} // 👈 Conectamos el input con Hook Form
+                            id="email"
+                            placeholder="nombre.apellido@mahosalud.cl"
+                            {...register("email")} // 👈 Conectamos el input con Hook Form
                         />
                         {/* Mensaje de error del campo */}
-                        {errors.rut && <p className="text-xs text-red-500">{errors.rut.message}</p>}
+                        {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
                     </div>
 
                     {/* Campo Password */}
@@ -139,7 +144,7 @@ export function LoginForm() {
                         className="w-full bg-blue-600 hover:bg-blue-700"
                         disabled={loading} // Deshabilitar si está cargando
                     >
-                        {loading ? "Verificando..." : "Ingresar al Sistema"}
+                        {loading ? "Verificando Credenciales..." : "Ingresar al Sistema"}
                     </Button>
                 </CardFooter>
             </form>
