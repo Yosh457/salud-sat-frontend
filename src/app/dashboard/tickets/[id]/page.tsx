@@ -44,6 +44,15 @@ interface Usuario {
     rol: string;
 }
 
+// Pega esto debajo de interface Usuario
+interface HistorialItem {
+    id: number;
+    accion: string;
+    detalle: string;
+    fecha: string;
+    usuario: string; 
+}
+
 export default function TicketDetailPage() {
     const router = useRouter();
     const params = useParams(); // 👈 Aquí capturamos el ID de la URL (ej: 1)
@@ -52,7 +61,7 @@ export default function TicketDetailPage() {
     // Estados de datos
     const [ticket, setTicket] = useState<TicketDetail | null>(null);
     const [evidencias, setEvidencias] = useState<Evidencia[]>([]);
-    const [historial, setHistorial] = useState<any[]>([]); // 👈 Estado Historial
+    const [historial, setHistorial] = useState<HistorialItem[]>([]); // 👈 Estado Historial
     const [tecnicos, setTecnicos] = useState<Usuario[]>([]); // Lista para el select
     const [currentUser, setCurrentUser] = useState<{ id: number; rol: string } | null>(null); // Para permisos
 

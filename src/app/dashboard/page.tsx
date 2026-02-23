@@ -18,10 +18,16 @@ interface StatItem {
     total: number;
 }
 
+// Define la estructura de un técnico en el top
+interface TopTecnico {
+    nombre_completo: string;
+    tickets_resueltos: number;
+}
+
 interface DashboardStats {
     resumen_estados: StatItem[];
     alertas_prioridad: StatItem[];
-    top_tecnicos: any[];
+    top_tecnicos: TopTecnico[]; // 👈 CORREGIDO
 }
 
 export default function DashboardPage() {
@@ -70,7 +76,7 @@ export default function DashboardPage() {
                 setLoadingStats(false);
             }
 
-        } catch (e) {
+        } catch {
             localStorage.removeItem("sat_token");
             router.push("/");
         }

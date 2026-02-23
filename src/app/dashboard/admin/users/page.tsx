@@ -1,22 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Swal from "sweetalert2"; // Asegúrate de tenerlo instalado
+import Swal from "sweetalert2";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
-// Tipos de datos
+// ====================
+// Tipos
+// ====================
 interface UsuarioLinked {
     id: number;
     rut: string;
     nombre_completo: string;
     email: string;
-    rol: string;
-    activo: number; // Viene como 1 o 0 de la BD
+    rol: "funcionario" | "tecnico" | "admin";
+    activo: 0 | 1;
     fecha_creacion: string;
 }
 
@@ -29,19 +30,21 @@ interface UsuarioGlobal {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+// ====================
+// Componente
+// ====================
 export default function AdminUsersPage() {
-    const router = useRouter();
     const [usuarios, setUsuarios] = useState<UsuarioLinked[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
 
-    // --- CARGAR DATOS ---
-    useEffect(() => {
-        fetchUsuarios();
-    }, []);
-
+    // ====================
+    // Cargar usuarios
+    // ====================
     const fetchUsuarios = async () => {
         const token = localStorage.getItem("sat_token");
+        if (!token) return;
+
         try {
             const res = await fetch(`${API_URL}/api/users`, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -49,215 +52,227 @@ export default function AdminUsersPage() {
             const data = await res.json();
             if (data.status === "success") {
                 setUsuarios(data.data);
-            } else {
-                Swal.fire("Error", "No se pudieron cargar los usuarios", "error");
             }
-        } catch (error) {
-            console.error(error);
+        } catch {
+            Swal.fire("Error", "No se pudieron cargar los usuarios", "error");
         } finally {
             setLoading(false);
         }
     };
 
-    // --- ACCIÓN: VINCULAR NUEVO USUARIO ---
+    useEffect(() => {
+        fetchUsuarios();
+    }, []);
+
+    // ====================
+    // Vincular usuario
+    // ====================
     const handleVincular = async () => {
         const token = localStorage.getItem("sat_token");
+        if (!token) return;
 
-        // 1. Obtener usuarios globales disponibles
         let disponibles: UsuarioGlobal[] = [];
         try {
             const res = await fetch(`${API_URL}/api/users/disponibles`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const result = await res.json();
-            if (result.status === 'success') disponibles = result.data;
-        } catch (e) {
+            if (result.status === "success") disponibles = result.data;
+        } catch {
             Swal.fire("Error", "Error al conectar con Portal TICs", "error");
             return;
         }
 
         if (disponibles.length === 0) {
-            Swal.fire("Información", "No hay nuevos funcionarios disponibles para vincular.", "info");
+            Swal.fire("Info", "No hay funcionarios disponibles para vincular", "info");
             return;
         }
 
-        // 2. Construir HTML para el SweetAlert (Selects)
         const optionsHtml = disponibles.map(u =>
             `<option value="${u.id}">${u.nombre_completo} (${u.rut})</option>`
-        ).join('');
+        ).join("");
 
         const { value: formValues } = await Swal.fire({
-            title: 'Vincular Funcionario',
+            title: "Vincular Funcionario",
             html: `
-                <div class="text-left mb-4">
-                    <label class="block text-sm font-medium text-gray-700">Funcionario (Portal TICs)</label>
-                    <select id="swal-user" class="w-full border border-gray-300 rounded p-2 mt-1">
-                        ${optionsHtml}
-                    </select>
-                </div>
-                <div class="text-left">
-                    <label class="block text-sm font-medium text-gray-700">Rol en SAT</label>
-                    <select id="swal-rol" class="w-full border border-gray-300 rounded p-2 mt-1">
-                        <option value="funcionario">Funcionario (Usuario)</option>
-                        <option value="tecnico">Técnico</option>
-                        <option value="admin">Administrador</option>
-                    </select>
-                </div>
+                <label class="block text-left text-sm mb-1">Funcionario</label>
+                <select id="swal-user" class="swal2-input">${optionsHtml}</select>
+                <label class="block text-left text-sm mt-3 mb-1">Rol</label>
+                <select id="swal-rol" class="swal2-input">
+                    <option value="funcionario">Funcionario</option>
+                    <option value="tecnico">Técnico</option>
+                    <option value="admin">Administrador</option>
+                </select>
             `,
-            focusConfirm: false,
             showCancelButton: true,
-            confirmButtonText: 'Otorgar Acceso',
-            cancelButtonText: 'Cancelar',
-            preConfirm: () => {
-                return {
-                    usuario_global_id: (document.getElementById('swal-user') as HTMLSelectElement).value,
-                    rol: (document.getElementById('swal-rol') as HTMLSelectElement).value
-                }
-            }
+            confirmButtonText: "Otorgar Acceso",
+            preConfirm: () => ({
+                usuario_global_id: (document.getElementById("swal-user") as HTMLSelectElement).value,
+                rol: (document.getElementById("swal-rol") as HTMLSelectElement).value
+            })
         });
 
-        if (formValues) {
-            // 3. Enviar al Backend
-            try {
-                const res = await fetch(`${API_URL}/api/users/vincular`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                    },
-                    body: JSON.stringify(formValues)
-                });
+        if (!formValues) return;
 
-                if (res.ok) {
-                    Swal.fire("¡Éxito!", "Usuario vinculado correctamente.", "success");
-                    fetchUsuarios(); // Recargar tabla
-                } else {
-                    Swal.fire("Error", "No se pudo vincular.", "error");
-                }
-            } catch (error) {
-                console.error(error);
-            }
-        }
+        await fetch(`${API_URL}/api/users/vincular`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(formValues)
+        });
+
+        Swal.fire("Éxito", "Usuario vinculado correctamente", "success");
+        fetchUsuarios();
     };
 
-    // --- ACCIÓN: CAMBIAR ESTADO/ROL ---
-    const handleEditar = async (user: UsuarioLinked) => {
+    // ====================
+    // Toggle estado
+    // ====================
+    const handleToggleEstado = async (user: UsuarioLinked) => {
         const token = localStorage.getItem("sat_token");
+        if (!token) return;
 
-        const { value: formValues } = await Swal.fire({
-            title: `Editar: ${user.nombre_completo}`,
-            html: `
-                <div class="text-left mb-4">
-                    <label class="block text-sm font-medium text-gray-700">Rol</label>
-                    <select id="edit-rol" class="w-full border border-gray-300 rounded p-2 mt-1">
-                        <option value="funcionario" ${user.rol === 'funcionario' ? 'selected' : ''}>Funcionario</option>
-                        <option value="tecnico" ${user.rol === 'tecnico' ? 'selected' : ''}>Técnico</option>
-                        <option value="admin" ${user.rol === 'admin' ? 'selected' : ''}>Administrador</option>
-                    </select>
-                </div>
-                <div class="text-left">
-                    <label class="block text-sm font-medium text-gray-700">Estado</label>
-                    <select id="edit-activo" class="w-full border border-gray-300 rounded p-2 mt-1">
-                        <option value="1" ${user.activo ? 'selected' : ''}>Activo</option>
-                        <option value="0" ${!user.activo ? 'selected' : ''}>Inactivo (Sin acceso)</option>
-                    </select>
-                </div>
-            `,
+        const nuevoEstado = user.activo === 1 ? 0 : 1;
+
+        const confirm = await Swal.fire({
+            title: nuevoEstado ? "¿Activar acceso?" : "¿Desactivar acceso?",
+            text: user.nombre_completo,
+            icon: "warning",
             showCancelButton: true,
-            confirmButtonText: 'Guardar Cambios',
-            preConfirm: () => {
-                return {
-                    rol: (document.getElementById('edit-rol') as HTMLSelectElement).value,
-                    activo: (document.getElementById('edit-activo') as HTMLSelectElement).value
-                }
-            }
+            confirmButtonColor: nuevoEstado ? "#10b981" : "#ef4444",
+            confirmButtonText: "Confirmar"
         });
 
-        if (formValues) {
-            try {
-                await fetch(`${API_URL}/api/users/${user.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                    },
-                    body: JSON.stringify(formValues)
-                });
-                Swal.fire("Actualizado", "Permisos modificados.", "success");
-                fetchUsuarios();
-            } catch (error) {
-                console.error(error);
-            }
-        }
+        if (!confirm.isConfirmed) return;
+
+        await fetch(`${API_URL}/api/users/${user.id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ activo: nuevoEstado })
+        });
+
+        setUsuarios(prev =>
+            prev.map(u => u.id === user.id ? { ...u, activo: nuevoEstado } : u)
+        );
+
+        Swal.fire({
+            toast: true,
+            position: "top-end",
+            timer: 2500,
+            showConfirmButton: false,
+            icon: "success",
+            title: nuevoEstado ? "Usuario activado" : "Usuario desactivado"
+        });
     };
 
-    // Filtro de búsqueda local
+    // ====================
+    // Editar rol
+    // ====================
+    const handleEditarRol = async (user: UsuarioLinked) => {
+        const token = localStorage.getItem("sat_token");
+        if (!token) return;
+
+        const { value: nuevoRol } = await Swal.fire({
+            title: "Cambiar Rol",
+            input: "select",
+            inputOptions: {
+                funcionario: "Funcionario",
+                tecnico: "Técnico",
+                admin: "Administrador"
+            },
+            inputValue: user.rol,
+            showCancelButton: true
+        });
+
+        if (!nuevoRol || nuevoRol === user.rol) return;
+
+        await fetch(`${API_URL}/api/users/${user.id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ rol: nuevoRol })
+        });
+
+        setUsuarios(prev =>
+            prev.map(u => u.id === user.id ? { ...u, rol: nuevoRol } : u)
+        );
+
+        Swal.fire("Actualizado", "Rol modificado correctamente", "success");
+    };
+
     const filteredUsers = usuarios.filter(u =>
         u.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // ====================
+    // UI
+    // ====================
     return (
         <div className="flex-1 bg-gray-100 p-8">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Gestión de Usuarios</h1>
-                    <p className="text-gray-500">Administra el acceso al SAT (Vinculado a Portal TICs)</p>
+                    <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
+                    <p className="text-gray-500">Control de acceso SAT</p>
                 </div>
-                <Button onClick={handleVincular} className="bg-blue-600 hover:bg-blue-700">
-                    + Vincular Funcionario
-                </Button>
+                <Button onClick={handleVincular}>+ Vincular Funcionario</Button>
             </div>
 
             <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle>Usuarios con Acceso</CardTitle>
-                        <Input
-                            placeholder="Buscar por nombre o email..."
-                            className="max-w-xs"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
+                <CardHeader className="flex flex-row justify-between">
+                    <CardTitle>Usuarios</CardTitle>
+                    <Input
+                        placeholder="Buscar..."
+                        className="max-w-xs"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Nombre / RUT</TableHead>
-                                <TableHead>Email (Portal)</TableHead>
-                                <TableHead>Rol (Local)</TableHead>
-                                <TableHead>Estado</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
+                                <TableHead>Funcionario</TableHead>
+                                <TableHead>Rol</TableHead>
+                                <TableHead className="text-center">Estado</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {loading ? (
-                                <TableRow><TableCell colSpan={5} className="text-center">Cargando...</TableCell></TableRow>
-                            ) : filteredUsers.map((user) => (
-                                <TableRow key={user.id}>
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center">Cargando...</TableCell>
+                                </TableRow>
+                            ) : filteredUsers.map(user => (
+                                <TableRow key={user.id} className={!user.activo ? "opacity-60" : ""}>
                                     <TableCell>
                                         <div className="font-medium">{user.nombre_completo}</div>
-                                        <div className="text-xs text-gray-500">{user.rut}</div>
+                                        <div className="text-xs text-gray-500">{user.email}</div>
                                     </TableCell>
-                                    <TableCell>{user.email}</TableCell>
                                     <TableCell>
-                                        <Badge variant={user.rol === 'admin' ? 'destructive' : user.rol === 'tecnico' ? 'default' : 'secondary'}>
-                                            {user.rol.toUpperCase()}
+                                        <Badge
+                                            variant="outline"
+                                            className="cursor-pointer"
+                                            onClick={() => handleEditarRol(user)}
+                                        >
+                                            {user.rol.toUpperCase()} ✏️
                                         </Badge>
                                     </TableCell>
-                                    <TableCell>
-                                        {user.activo ? (
-                                            <span className="text-green-600 font-bold text-xs">ACTIVO</span>
-                                        ) : (
-                                            <span className="text-red-500 font-bold text-xs">INACTIVO</span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => handleEditar(user)}>
-                                            Gestionar
-                                        </Button>
+                                    <TableCell className="text-center">
+                                        <button
+                                            onClick={() => handleToggleEstado(user)}
+                                            className={`relative inline-flex h-6 w-11 rounded-full transition
+                                                ${user.activo ? "bg-green-500" : "bg-gray-300"}`}
+                                        >
+                                            <span className={`inline-block h-4 w-4 bg-white rounded-full transform transition
+                                                ${user.activo ? "translate-x-6" : "translate-x-1"}`} />
+                                        </button>
                                     </TableCell>
                                 </TableRow>
                             ))}

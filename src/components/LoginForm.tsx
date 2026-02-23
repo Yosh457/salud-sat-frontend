@@ -74,13 +74,18 @@ export function LoginForm() {
             // Guardamos datos básicos del usuario para usarlos inmediatamente
             localStorage.setItem("sat_user", JSON.stringify(result.user));
 
-            // Redirigimos al Dashboard
-            // Comentamos la alerta para no interrumpir el flujo
-            // alert("¡Login Exitoso! Token guardado.");
-            router.push("/dashboard");
+            // 👇 NUEVA LÓGICA DE INTERCEPCIÓN 👇
+            // Verificamos si el Portal TICs nos pide forzar el cambio de clave
+            if (result.user.cambio_clave_requerido === true || result.user.cambio_clave_requerido === 1) {
+                console.log("🔒 Redirigiendo a cambio de clave obligatorio...");
+                router.push("/cambiar-clave"); 
+            } else {
+                console.log("✅ Redirigiendo al dashboard...");
+                router.push("/dashboard");
+            }
 
-        } catch (err: any) {
-            setError(err.message); // Mostramos el error en pantalla
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Error desconocido"); 
         } finally {
             setLoading(false); // Reactivamos el botón
         }
